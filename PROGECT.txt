@@ -1,0 +1,310 @@
+1-
+en
+config t
+enable password 1234
+hostname BR-ROUTER
+banner motd #No Unauthorised Access!!!#
+no ip domain lookup
+line console 0
+password 1234
+login
+exit
+service password-encryption 
+do wr
+
+
+
+2- sw layer 3
+
+
+ip domain-name kareem.net
+crypto key generate rsa
+512
+username admain password 1234
+line vty 0 15
+password 1234
+login local
+transport input ssh 
+exit
+do wr
+
+
+3-
+int range f0/1-3
+switchport mode access
+switchport access vlan 10
+vlan 10 
+name mlcos
+int range f0/4-5
+switchport mode trunk 
+ex
+
+do wr 
+
+4-
+layer 3 
+
+creat vlans
+
+vlan 10
+vlan 20
+vlan 30
+vlan 40
+vlan 50
+vlan 60 
+ ثم نعمل الport trunk
+int range f0/1-7
+switchport trunk encapsulation dot1q 
+switchport mode trunk
+do wr
+
+
+ونعمل كدا برضه في السوتشات الثانيه layer 3 
+
+vlan 80
+vlan 90
+vlan 100
+vlan 110
+vlan 120
+vlan 130
+
+int range f0/1-7
+switchport trunk encapsulation dot1q 
+switchport mode trunk
+do wr
+
+في سوتش السيرفير 
+
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security  violation shutdown 
+exit 
+do wr 
+
+ثم بعد ذالك نعمل علي توزيع IP 
+
+
+ospf layer 3 
+ip routing
+
+router ospf 10
+
+network 192.168.100.0 0.0.0.63 area 0
+network 192.168.100.64 0.0.0.63 area 0
+network 192.168.100.128 0.0.0.63 area 0
+network 192.168.100.192 0.0.0.63 area 0
+network 192.168.101.0 0.0.0.63 area 0
+network 192.168.101.64 0.0.0.63 area 0
+network 192.168.102.84 0.0.0.3 area 0
+
+exit 
+
+ip route 0.0.0.0 0.0.0.0 192.168.102.86
+do wr 
+
+
+sw layer 3 BR  
+
+ip routing
+router ospf 10
+
+network 192.168.101.128 0.0.0.31 area 0
+network 192.168.101.160 0.0.0.31 area 0
+network 192.168.101.192 0.0.0.31 area 0
+network 192.168.101.224 0.0.0.31 area 0
+network 192.168.102.0 0.0.0.31 area 0
+network 192.168.102.32 0.0.0.31 area 0
+network 192.168.102.96 0.0.0.3 area 0
+exit 
+
+ip route 0.0.0.0 0.0.0.0 192.168.102.98
+do wr 
+
+
+routing نشتغل علي الراوتر r1 
+
+router ospf 10
+
+network 192.168.102.80 0.0.0.3 area 0
+network 192.168.102.84 0.0.0.3 area 0
+network 192.168.102.64 0.0.0.15 area 0
+network 192.168.102.88 0.0.0.3 area 0
+network 195.136.17.4 0.0.0.3 area 0
+network 195.136.17.0 0.0.0.3 area 0
+
+ip route 0.0.0.0 0.0.0.0 195.136.17.2   active
+ip route 0.0.0.0 0.0.0.0 195.136.17.6 70  buckup
+do wr 
+
+
+r2 
+
+router ospf 10
+
+network 192.168.102.92 0.0.0.3 area 0
+network 192.168.102.96 0.0.0.3 area 0
+network 195.136.17.8 0.0.0.15 area 0
+network 192.168.102.88 0.0.0.3 area 0
+network 195.136.17.12 0.0.0.3 area 0
+
+
+ip route 0.0.0.0 0.0.0.0 195.136.17.14      active             
+ip route 0.0.0.0 0.0.0.0 195.136.17.10 70           backup        
+do wr
+
+
+r3 wan 
+
+router ospf 10
+network 195.136.17.8 0.0.0.3 area 0
+network 195.136.17.0 0.0.0.3 area 0
+exit 
+do wr
+
+
+r4
+router ospf 10
+network 195.136.17.12 0.0.0.3 area 0
+network 195.136.17.4 0.0.0.3 area 0
+exit 
+do wr
+
+
+svi 
+
+
+int vlan 10
+ip add 192.168.100.1 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+int vlan 20
+ip add  192.168.100.65 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+int vlan 30
+ip add 192.168.100.129 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+int vlan 40
+ip add 192.168.100.193 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+int vlan 50
+ip add 192.168.101.1 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+int vlan 50
+ip add 192.168.101.1 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+int vlan 60
+ip add 192.168.101.65 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+--------------------------------------
+
+router ospf 80
+network 195.136.17.8 0.0.0.3 area 0
+network 195.136.17.0 0.0.0.3 area 0
+exit 
+do wr
+
+
+r4
+router ospf 90
+network 195.136.17.12 0.0.0.3 area 0
+network 195.136.17.4 0.0.0.3 area 0
+exit 
+do wr
+
+int vlan 100
+ip add 192.168.100.1 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+int vlan 110
+ip add  192.168.100.65 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+int vlan 120
+ip add 192.168.100.129 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+int vlan 130
+ip add 192.168.100.193 255.255.255.192
+ip helper-address 192.168.102.67
+ex
+
+
+
+
+---------------------------------------
+BR dhcp
+
+int vlan 80
+ip add 192.168.101.129 255.255.255.224
+ip helper-address 192.168.102.67
+ex
+int vlan 90
+ip add  192.168.101.161 255.255.255.224
+ip helper-address 192.168.102.67
+ex
+int vlan 100
+ip add 192.168.101.193 255.255.255.224
+ip helper-address 192.168.102.67
+ex
+
+int vlan 110
+ip add 192.168.101.225 255.255.255.244
+ip helper-address 192.168.102.67
+ex
+
+
+int vlan 120
+ip add  192.168.102.1 255.255.255.244
+ip helper-address 192.168.102.67
+ex
+
+int vlan 130
+ip add 192.168.102.33 255.255.255.224
+ip helper-address 192.168.102.67
+ex
+
+
+
+
+namse
+
+vlan 10
+name MLOCS
+vlan 20
+name MER
+vlan 30
+name MRM
+VLAN 40
+NAme IT
+VLAN 50
+NAme CS
+VLAN 60
+NAme GWA
+DO WR
+
+names br 
+
+vlan 80
+name NOS
+vlan 90
+name HL
+vlan 100
+name HR 
+VLAN 110
+NAme MK
+VLAN 120
+NAme FIN
+VLAN 130
+NAme BR-GWA 
+DO WR	
